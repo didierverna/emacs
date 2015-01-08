@@ -52,6 +52,13 @@ Carbon version by Yamamoto Mitsuharu. */
 #include "nsmenu_common.c"
 #endif
 
+extern Lisp_Object Qundefined, Qmenu_enable, Qmenu_bar_update_hook;
+extern Lisp_Object QCtoggle, QCradio;
+extern Lisp_Object Qmenu_bar_icon;
+
+Lisp_Object Qdebug_on_next_call;
+extern Lisp_Object Qoverriding_local_map, Qoverriding_terminal_local_map;
+
 extern long context_menu_value;
 EmacsMenu *mainMenu, *svcsMenu, *dockMenu;
 
@@ -97,6 +104,16 @@ popup_activated (void)
     2) deep_p, submenu = nil: Recompute all submenus.
     3) deep_p, submenu = non-nil: Update contents of a single submenu.
    -------------------------------------------------------------------------- */
+
+/* Resize IMAGE to 16x16, suitable for the menubar, and return it. */
+NSImage
+*resize_image (NSImage *image)
+{
+  [image setSize: NSMakeSize (16.0, 16.0)];
+
+  return image;
+}
+
 static void
 ns_update_menubar (struct frame *f, bool deep_p, EmacsMenu *submenu)
 {
@@ -443,7 +460,6 @@ ns_update_menubar (struct frame *f, bool deep_p, EmacsMenu *submenu)
     }
   free_menubar_widget_value_tree (first_wv);
 
-
 #if NSMENUPROFILE
   ftime (&tb);
   t += 1000*tb.time+tb.millitm;
@@ -454,9 +470,126 @@ ns_update_menubar (struct frame *f, bool deep_p, EmacsMenu *submenu)
   if (needsSet)
     [NSApp setMainMenu: menu];
 
+  if (menu_bar_use_icons)
+    {
+      if (! [[menu itemAtIndex: 0] isHidden])
+	{
+	  static NSImage *application_icon = NULL;
+	  if (application_icon == NULL)
+	    application_icon
+	      = resize_image ([[NSApp applicationIconImage] copy]);
+
+	  // #### WARNING: NASTY HACK ALERT! OS X doesn't allow
+	  // #### customization of the application menu. This means
+	  // #### that we can't normally put an icon in the menubar
+	  // #### there.  The only solution I have right now is to
+	  // #### duplicate this menu, insert it at position 1 and
+	  // #### hide the original one...
+	  NSMenuItem* fake = [[menu itemAtIndex: 0] copy];
+
+	  [fake setImage: application_icon];
+	  [[menu itemAtIndex: 0] setHidden: YES];
+	  [menu insertItem: fake atIndex: 1];
+
+	  [fake release];
+	}
+
+      NSMenuItem *separator = [menu itemWithTitle: @"Menubar Separator"];
+      for (i = 2;
+	   i < [menu numberOfItems] - ((separator == nil) ? 0 : 1);
+	   i++)
+	{
+	  NSMenuItem *item = [menu itemAtIndex: i];
+	  Lisp_Object title = build_string ([[item title] UTF8String]);
+	  Lisp_Object args[2];
+	  Lisp_Object file_name;
+
+	  args[0] = Qmenu_bar_icon;
+	  args[1] = title;
+	  file_name = Ffuncall (2, args);
+
+	  if (NILP (file_name))
+	    [item setImage: nil];
+	  else
+	    {
+	      NSString *file
+		= [NSString stringWithUTF8String: SSDATA (file_name)];
+	      /* #### WARNING: don't use initByReferencingFile:
+		 #### here. It initializes the image lazily so if
+		 #### there's a problem, we get an empty image instead
+		 #### of nil and the test below fails. */
+	      NSImage *image = [[NSImage alloc] initWithContentsOfFile: file];
+
+	      if (image == nil)
+		{
+		  NSLog (@"Emacs: couldn't create icon for menu \"%@\".",
+			 [item title]);
+		  [item setImage: nil];
+		}
+	      else
+		{
+		  resize_image (image);
+		  [item setImage: image];
+		  [image release];
+		}
+	    }
+	}
+      if (separator == nil)
+	{
+	  separator = [menu addItemWithTitle: @"Menubar Separator"
+				      action: NULL
+			       keyEquivalent: @""];
+
+	  if (separator == nil)
+	    NSLog (@"Emacs: couldn't create menubar separator item.");
+	  else
+	    {
+	      /* #### NOTE: it is required to add a dummy menu to the
+		 #### separator menubar item. Otherwise, the item
+		 #### would not be displayed. */
+	      NSMenu* separator_menu
+		= [[NSMenu alloc] initWithTitle: @"Menubar Separator"];
+	      [separator setSubmenu: separator_menu];
+	      [separator_menu release];
+
+	      NSImage *image = [[NSImage alloc]
+				 initWithContentsOfURL:
+				   [[[NSBundle mainBundle] resourceURL]
+				     URLByAppendingPathComponent:
+				       @"etc/images/barsplit.png"]];
+
+	      if (image == nil)
+		{
+		  NSLog
+		    (@"Emacs: couldn't instantiate menubar separator image.");
+		  [menu removeItem: separator];
+		}
+	      else
+		{
+		  [separator setImage: image];
+		  [image release];
+		}
+	    }
+	}
+    }
+  else
+    {
+      if ([[menu itemAtIndex: 0] isHidden])
+	{
+	  [menu removeItemAtIndex: 1];
+	  [[menu itemAtIndex: 0] setHidden: NO];
+	}
+
+      for (i = 1; i < [menu numberOfItems]; i++)
+	[[menu itemAtIndex: i] setImage: nil];
+
+      NSMenuItem *separator = [menu itemWithTitle: @"Menubar Separator"];
+      if (separator != nil)
+	[menu removeItem: separator];
+    }
+
   [pool release];
   unblock_input ();
-
 }
 
 

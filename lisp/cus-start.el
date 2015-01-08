@@ -444,7 +444,9 @@ Leaving \"Default\" unchecked is equivalent with specifying a default of
              (ns-confirm-quit ns boolean "25.1")
 	     (ns-use-native-fullscreen ns boolean "24.4")
              (ns-use-fullscreen-animation ns boolean "25.1")
-             (ns-use-srgb-colorspace ns boolean "24.4")
+	     (ns-use-srgb-colorspace ns boolean "24.4")
+	     ;; menu.c
+	     (menu-bar-use-icons menu boolean)
 	     ;; process.c
 	     (delete-exited-processes processes-basics boolean)
 	     ;; syntax.c

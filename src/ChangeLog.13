@@ -1,3 +1,11 @@
+2015-01-08  Didier Verna  <didier@didierverna.net>
+
+	* nsmenu.m: (resize_image): New function.
+	(ns_update_menubar): Implement menu bar icons management.
+	* menu.c (Qmenu_bar_icon): New Lisp object.
+	(syms_of_menu): DEFSYM it. Also define menu_bar_use_icons
+	Boolean.
+
 2015-04-06  Koichi Arakawa  <arakawa@pp.iij4u.or.jp>  (tiny change)
 
 	* w32proc.c (w32_executable_type): Look for the DLL name in the

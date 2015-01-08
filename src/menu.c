@@ -63,6 +63,7 @@ Lisp_Object menu_items;
 /* If non-nil, means that the global vars defined here are already in use.
    Used to detect cases where we try to re-enter this non-reentrant code.  */
 Lisp_Object menu_items_inuse;
+Lisp_Object Qmenu_bar_icon;
 
 /* Number of slots currently allocated in menu_items.  */
 int menu_items_allocated;
@@ -1581,4 +1582,14 @@ syms_of_menu (void)
   defsubr (&Sx_popup_menu);
   defsubr (&Sx_popup_dialog);
   defsubr (&Smenu_bar_menu_at_x_y);
+
+  DEFSYM (Qmenu_bar_icon, "menu-bar-icon");
+  DEFVAR_BOOL ("menu-bar-use-icons",
+	       menu_bar_use_icons,
+	       doc: /*
+*Non-nil means use icons instead of titles in the menu-bar.
+See the variable `menu-bar-icons' for details.
+
+This feature is currently supported on OS X only.  */);
+  menu_bar_use_icons = 0;
 }

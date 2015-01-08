@@ -2475,6 +2475,61 @@ This is the keyboard interface to \\[mouse-buffer-menu]."
                 (menu-bar-buffer-vector item)))))
     km))
 
+
+;; Menu bar icons support
+
+(defcustom menu-bar-icons-directory ""
+  "Directory in which to find icons for the menu-bar.
+See `menu-bar-icons' for more explanations."
+  :type 'directory
+  :version "24.3"
+  :group 'menu)
+
+(defcustom menu-bar-icons nil
+  "Icons for menu titles in the menu bar.
+This is a list of elements of the form (TITLE . ICON) where:
+  - TITLE is a regular expression matching a menu title,
+  - ICON is either a string or a symbol.
+
+In case of multiple matches, the first one is used.
+
+When ICON is a string, it names an image file that will be used
+as a replacement for matching menu titles.  If ICON is a relative path,
+the file will be searched for in the directory specified by
+`menu-bar-icons-directory' first, and then in the directories
+specified by `image-load-path'.
+
+When ICON is a symbol, it names a function of one argument which
+will be called on the menu title.  The function should then return
+the appropriate icon, as if it had been directly specified."
+  :type '(repeat (cons (regexp :tag "Title Regexp")
+		       (choice (string :tag "Icon")
+			       function)))
+  :version "24.3"
+  :group 'menu)
+
+(defun menu-bar-icon (title)
+  "Return an icon for menu-bar TITLE, or nil."
+  (with-demoted-errors
+    (let ((icons menu-bar-icons)
+	  icon match)
+      (while (and (not match) (setq icon (pop icons)))
+	(when (string-match (car icon) title)
+	  (setq match (cdr icon))))
+      (when (and match (symbolp match))
+	(setq match (funcall match title)))
+      (when match
+	(cond ((file-name-absolute-p match)
+	       (unless (file-readable-p match)
+		 (error "File %s does not exist or is not readable" match))
+	       match)
+	      (t
+	       (let ((image-load-path
+		      (if (> (length menu-bar-icons-directory) 0)
+			  (cons menu-bar-icons-directory image-load-path)
+			image-load-path)))
+		 (image-search-load-path match))))))))
+
 (defvar tty-menu-navigation-map
   (let ((map (make-sparse-keymap)))
     ;; The next line is disabled because it breaks interpretation of
@@ -2544,6 +2599,7 @@ This is the keyboard interface to \\[mouse-buffer-menu]."
     (define-key map [mouse-movement] 'tty-menu-mouse-movement)
     map)
   "Keymap used while processing TTY menus.")
+
 
 (provide 'menu-bar)
 

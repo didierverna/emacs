@@ -1,3 +1,10 @@
+2015-01-08  Didier Verna  <didier@didierverna.net>
+
+	* menu-bar.el (menu-bar-icons-directory):
+	(menu-bar-icons): New user options.
+	(menu-bar-icon): New function.
+	* cus-start.el: Declare menu-bar-use-icons as a Boolean.
+
 2015-04-06  Alan Mackenzie  <acm@muc.de>
 
 	Fix miscellaneous glitches in cc-mode.el.  (Bug#20245)
