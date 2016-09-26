@@ -63,7 +63,6 @@ Lisp_Object menu_items;
 /* If non-nil, means that the global vars defined here are already in use.
    Used to detect cases where we try to re-enter this non-reentrant code.  */
 Lisp_Object menu_items_inuse;
-Lisp_Object Qmenu_bar_icon;
 
 /* Number of slots currently allocated in menu_items.  */
 int menu_items_allocated;
