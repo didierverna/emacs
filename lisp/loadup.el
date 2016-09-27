@@ -427,6 +427,14 @@ lost after dumping")))
     (message "Pure-hashed: %d strings, %d vectors, %d conses, %d bytecodes, %d others"
              strings vectors conses bytecodes others)))
 
+
+;; Save the build-time value of EXEC-PATH, which was available at run
+;; time before this commit:
+;; commit 2fc11b3fa3418e0e8a624376ea8bf4cbc70c2657
+;; Author: Ludovic Courtès <ludo@gnu.org>
+;; Date:   Mon Apr 20 17:44:23 2015 -0400
+(defvar build-time-exec-path exec-path)
+
 ;; Prevent build-time PATH getting stored in the binary.
 ;; Mainly cosmetic, but helpful for Guix.  (Bug#20330)
 ;; Do this here, rather than earlier, so that the above code
